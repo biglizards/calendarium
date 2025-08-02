@@ -308,7 +308,6 @@ function format(
         .replace("🂦", toPaddedString(date.day, calendar, "day"))
         .replace("🂧", `${date.day}`)
         .replace("🂨", weekNumberOfMonth(date, date.month, calendar))
-        .replace("🂩", weekNameOfDay(date, date.month, calendar))
         .trim();
 }
 
@@ -361,8 +360,13 @@ export function weekNumberOfMonth(
     const month = calendar.static.months[month_num];
     const week = (month.type == "intercalary" ? null : month.week) ?? calendar.static.weekdays;
 
-    return week[(date.day-1)%7|0].name ?? "*";
+    const name = week[(date.day-1)%7|0].name ?? "*";
+    const week_number = ((((date.day - 1) / week.length)|0) + 1);
 
+    const suffix = week_number == 1 ? "st" : week_number == 2 ? "nd" : week_number == 3 ? "rd" : "th";
+
+
+    return date.day > month.length ? "Springvyst" : `${name} ${week_number}${suffix}`
 }
 
 export function weekNameOfDay(
@@ -378,7 +382,7 @@ export function weekNameOfDay(
     const week = (month.type == "intercalary" ? null : month.week) ?? calendar.static.weekdays;
     // TODO broken, needs access to a store
     // assume months all start from the first day of the week
-    return ""
+    return week[(date.day-1)%7|0].name ?? "*";
 }
 
 export function isValidDay(date: CalDate, calendar: Calendar) {
