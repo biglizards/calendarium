@@ -261,7 +261,14 @@ function format(
         .replace(/[Mm]{2,}/g, "🂤") // MM
         .replace(/[Mm]/g, "🂥") // M
         .replace(/[Dd]{2,}/g, "🂦")
-        .replace(/[Dd]/g, "🂧");
+        .replace(/[Dd]/g, "🂧")
+        // ok i know you're using your own format here but i'm using strftime syntax
+        // because i have weird requirements
+        // this also helps avoid capturing literal Q's and A's
+        // and yeah they're case sensitive now
+        // im a freak sue me
+        .replace(/%Q/g, "🂨")  // week number of the month
+        .replace(/%A/g, "🂩"); // day of week (long)
 
     // If we have an intercalary month and are using "pretty names", well...
     if (
@@ -300,6 +307,8 @@ function format(
         .replace("🂥", `${date.month + 1}`) // M
         .replace("🂦", toPaddedString(date.day, calendar, "day"))
         .replace("🂧", `${date.day}`)
+        .replace("🂨", weekNumberOfMonth(date, date.month, calendar))
+        .replace("🂩", weekNameOfDay(date, date.month, calendar))
         .trim();
 }
 
@@ -334,6 +343,42 @@ export function toPaddedString(
     const padding =
         field == "month" ? calendar.static.padMonths : calendar.static.padDays;
     return data == null ? "*" : String(data).padStart(padding ?? 0, "0");
+}
+
+export function weekNumberOfMonth(
+    date: CalDate,
+    month_num: Nullable<number>,
+    calendar: Calendar,
+): string {
+    // TODO this is broken - it assumes the starting day of the month is the first day of the week
+    // and doesn't deal with non-weekday leap years (do we even support those though?)
+    // is there a function to get the starting weekday of a month?
+    // can we go based on the number of days since start of year or are intercalary days gonna mess with that
+    // maybe we can use the store for this?
+    if (month_num == null) {
+        return "*";
+    }
+    const month = calendar.static.months[month_num];
+    const week = (month.type == "intercalary" ? null : month.week) ?? calendar.static.weekdays;
+
+    return week[(date.day-1)%7|0].name ?? "*";
+
+}
+
+export function weekNameOfDay(
+    date: CalDate,
+    month_num: Nullable<number>,
+    calendar: Calendar,
+
+) : string {
+    if (month_num == null) {
+        return "*";
+    }
+    const month = calendar.static.months[month_num];
+    const week = (month.type == "intercalary" ? null : month.week) ?? calendar.static.weekdays;
+    // TODO broken, needs access to a store
+    // assume months all start from the first day of the week
+    return ""
 }
 
 export function isValidDay(date: CalDate, calendar: Calendar) {
